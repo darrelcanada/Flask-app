@@ -6,7 +6,7 @@ After=network.target
 User=tony
 Group=www-data
 WorkingDirectory=/home/tony/hike
-Environment="PATH=/home/tony/env/server/bin"
+Environment="PATH=/home/tony/env/teton/bin"
 ExecStart=/home/tony/env/server/bin/gunicorn --workers 3 --bind unix:peak.sock -m 007 wsgi:app
 
 [Install]
