@@ -1,5 +1,4 @@
-<<<<<<< HEAD
+
  sudo ln -s /etc/nginx/sites-available/peak.conf  /etc/nginx/sites-enabled/
-=======
- sudo ln -s /etc/nginx/sites-available/peak.conf  /etc/nginx/sites-enabled/
->>>>>>> c99925294fe0b0b4da45f7f700505d34b26a986f
+
+
