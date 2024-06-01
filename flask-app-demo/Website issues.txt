@@ -1,0 +1,170 @@
+
+sudo nano peak.service
+
+
+[Unit]
+Description=Gunicorn instance to serve peak Flask app
+After=network.target
+
+[Service]
+User=tony
+Group=www-data
+WorkingDirectory=/home/tony/hike
+Environment="PATH=/home/tony/env/server/bin"
+ExecStart=/home/tony/env/server/bin/gunicorn --workers 3 --bind unix:peak.sock -m 007 wsgi:app
+
+[Install]
+WantedBy=multi-user.target
+
+-------
+
+tony@dell-OptiPlex-3020:~/hike$ sudo systemctl enable peak
+Created symlink /etc/systemd/system/multi-user.target.wants/peak.service → /etc/systemd/system/peak.service.
+
+tony@dell-OptiPlex-3020:~/hike$ sudo systemctl status peak
+● peak.service - Gunicorn instance to serve peak Flask app
+     Loaded: loaded (/etc/systemd/system/peak.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2024-06-01 15:07:45 GMT; 1min 21s ago
+   Main PID: 11981 (gunicorn)
+      Tasks: 4 (limit: 9348)
+     Memory: 54.3M (peak: 54.9M)
+        CPU: 366ms
+     CGroup: /system.slice/peak.service
+             ├─11981 /home/tony/env/teton/bin/python3 /home/tony/env/teton/bin/gunicorn --workers 3 --bind unix:peak.sock -m 007 wsgi:app
+             ├─11982 /home/tony/env/teton/bin/python3 /home/tony/env/teton/bin/gunicorn --workers 3 --bind unix:peak.sock -m 007 wsgi:app
+             ├─11983 /home/tony/env/teton/bin/python3 /home/tony/env/teton/bin/gunicorn --workers 3 --bind unix:peak.sock -m 007 wsgi:app
+             └─11984 /home/tony/env/teton/bin/python3 /home/tony/env/teton/bin/gunicorn --workers 3 --bind unix:peak.sock -m 007 wsgi:app
+
+Jun 01 15:07:45 dell-OptiPlex-3020 systemd[1]: Started peak.service - Gunicorn instance to serve peak Flask app.
+Jun 01 15:07:45 dell-OptiPlex-3020 gunicorn[11981]: [2024-06-01 15:07:45 +0000] [11981] [INFO] Starting gunicorn 22.0.0
+Jun 01 15:07:45 dell-OptiPlex-3020 gunicorn[11981]: [2024-06-01 15:07:45 +0000] [11981] [INFO] Listening at: unix:peak.sock (11981)
+Jun 01 15:07:45 dell-OptiPlex-3020 gunicorn[11981]: [2024-06-01 15:07:45 +0000] [11981] [INFO] Using worker: sync
+Jun 01 15:07:45 dell-OptiPlex-3020 gunicorn[11982]: [2024-06-01 15:07:45 +0000] [11982] [INFO] Booting worker with pid: 11982
+Jun 01 15:07:45 dell-OptiPlex-3020 gunicorn[11983]: [2024-06-01 15:07:45 +0000] [11983] [INFO] Booting worker with pid: 11983
+Jun 01 15:07:45 dell-OptiPlex-3020 gunicorn[11984]: [2024-06-01 15:07:45 +0000] [11984] [INFO] Booting worker with pid: 11984
+
+
+Nginx
+
+tony@dell-OptiPlex-3020:~/hike$ sudo nginx -t
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+
+
+UFW
+
+tony@dell-OptiPlex-3020:~/hike$ sudo ufw status
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW       Anywhere
+22                         ALLOW       Anywhere
+Nginx Full                 ALLOW       Anywhere
+22/tcp (v6)                ALLOW       Anywhere (v6)
+22 (v6)                    ALLOW       Anywhere (v6)
+Nginx Full (v6)            ALLOW       Anywhere (v6)
+
+
+Permissions Error
+
+tony@dell-OptiPlex-3020:~/hike$ sudo tail /var/log/nginx/error.log
+2024/06/01 15:20:20 [crit] 12677#12677: *1 connect() to unix:/home/tony/hike/peak.sock failed (13: Permission denied) while connecting to upstream, client: 46.22.110.215, server: ravenxpool.com, request: "GET / HTTP/1.1", upstream: "http://unix:/home/tony/hike/peak.sock:/", host: "www.ravenxpool.com"
+
+
+tony@dell-OptiPlex-3020:~/hike$ sudo chmod 775 /home/tony/
+Still 502
+
+
+GPT
+
+The error message connect() to unix:/home/tony/hike/peak.sock failed (13: Permission denied) while connecting to upstream indicates that Nginx does not have the necessary permissions to access the socket file at /home/tony/hike/peak.sock.
+
+Here are the steps to resolve this issue:
+
+Check the permissions of the socket file:
+Ensure that the socket file has the correct permissions and ownership. The Nginx worker process must have read and write permissions on the socket.
+
+bash
+Copy code
+ls -l /home/tony/hike/peak.sock
+The output should show the permissions and ownership. For example:
+
+arduino
+Copy code
+srwxrwxr-x 1 tony tony 0 Jun 1 15:00 /home/tony/hike/peak.sock
+
+
+	tony@dell-OptiPlex-3020:~/hike$ ls -l /home/tony/hike/peak.sock
+	srwxrwx--- 1 tony www-data 0 Jun  1 15:07 /home/tony/hike/peak.sock
+
+
+Change the ownership and permissions:
+If the permissions are not correct, you can change the ownership to the user that Nginx runs as (usually www-data on Debian-based systems):
+
+bash
+Copy code
+sudo chown www-data:www-data /home/tony/hike/peak.sock
+sudo chmod 770 /home/tony/hike/peak.sock
+
+	tony@dell-OptiPlex-3020:~/hike$ sudo chown www-data:www-data /home/tony/hike/peak.sock
+					sudo chmod 770 /home/tony/hike/peak.sock
+
+	tony@dell-OptiPlex-3020:~/hike$ ls -l /home/tony/hike/peak.sock
+	srwxrwx--- 1 www-data www-data 0 Jun  1 15:07 /home/tony/hike/peak.sock
+
+
+Alternatively, if you need to allow multiple users or groups access, adjust the permissions accordingly.
+
+Verify Nginx user:
+Ensure that Nginx is running under the correct user. You can check this in the Nginx configuration file (usually found at /etc/nginx/nginx.conf or /etc/nginx/conf.d/):
+
+bash
+Copy code
+sudo grep user /etc/nginx/nginx.conf
+The output might be something like:
+
+kotlin
+Copy code
+user www-data;
+If the user is different, adjust the ownership of the socket file to match this user.
+
+SELinux considerations:
+If you are using SELinux, it might be blocking access. You can check if SELinux is enforcing with:
+
+bash
+Copy code
+sestatus
+If SELinux is enforcing, you can either adjust the SELinux policy to allow access or set SELinux to permissive mode (not recommended for production environments):
+
+bash
+Copy code
+sudo setenforce 0
+Restart Nginx:
+After adjusting permissions and ownership, restart Nginx to apply the changes:
+
+bash
+Copy code
+sudo systemctl restart nginx
+By following these steps, you should resolve the "Permission denied" error and allow Nginx to connect to the Unix socket successfully.
+
+
+	tony@dell-OptiPlex-3020:~/hike$ sudo chmod 775 /home/tony/hike/peak.sock
+	tony@dell-OptiPlex-3020:~/hike$ ls -l /home/tony/hike/peak.sock
+	srwxrwxr-x 1 www-data www-data 0 Jun  1 15:07 /home/tony/hike/peak.sock
+
+
+tony@dell-OptiPlex-3020:~/hike$ sudo tail /var/log/nginx/error.log
+2024/06/01 15:20:20 [crit] 12677#12677: *1 connect() to unix:/home/tony/hike/peak.sock failed (13: Permission denied) while connecting to upstream, client: 46.22.110.215, server: ravenxpool.com, request: "GET / HTTP/1.1", upstream: "http://unix:/home/tony/hike/peak.sock:/", host: "www.ravenxpool.com"
+2024/06/01 15:38:59 [alert] 12869#12869: *6 open socket #13 left in connection 3
+2024/06/01 15:38:59 [alert] 12871#12871: *7 open socket #10 left in connection 3
+2024/06/01 15:38:59 [alert] 12869#12869: aborting
+2024/06/01 15:38:59 [alert] 12871#12871: aborting
+
+	tony@dell-OptiPlex-3020:~/hike$ sudo chmod 755 /home/tony
+	sudo chmod 755 /home/tony/hike
+	tony@dell-OptiPlex-3020:~/hike$ ls -l /home/tony/hike/peak.sock
+	srwxrwxr-x 1 www-data www-data 0 Jun  1 15:07 /home/tony/hike/peak.sock
+
+
+
