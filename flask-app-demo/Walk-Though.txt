@@ -132,7 +132,20 @@ srwxrwxr-x 1 tony www-data 0 Jun  5 18:03 /home/tony/hike/peak.sock
 sudo grep user /etc/nginx/nginx.conf
 user www-data;
 
+-----NOTES-----
 
+ sudo systemctl restart peak
+resets permissions
+
+tony@dell:~/hike$ sudo systemctl restart peak
+tony@dell:~/hike$ ls -l /home/tony/hike/peak.sock
+srwxrwx--- 1 tony www-data 0 Jun  5 19:40 /home/tony/hike/peak.sock
+sudo chmod 775 /home/tony/hike/peak.sock
+srwxrwxr-x 1 tony www-data 0 Jun  5 19:40 /home/tony/hike/peak.sock
+
+tony@dell:~/hike$ sudo systemctl restart peak
+tony@dell:~/hike$ ls -l /home/tony/hike/peak.sock
+srwxrwx--- 1 tony www-data 0 Jun  5 19:43 /home/tony/hike/peak.sock
 
 
 
