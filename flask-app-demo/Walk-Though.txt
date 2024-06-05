@@ -1,0 +1,149 @@
+-----GUNICORN-----
+
+Gunicorn  VENV
+
+Location  /home/tony/hike/
+
+  nano wsgi.py
+
+from peak import app
+
+if __name__ == '__main__':
+    app.run()
+
+
+Gunicorn NOT VENV
+
+
+Location
+  sudo nano /etc/systemd/system/peak.service
+
+
+[Unit]
+Description=Gunicorn instance to serve peak Flask app
+After=network.target
+
+[Service]
+User=tony
+Group=www-data
+WorkingDirectory=/home/tony/hike
+Environment="PATH=/home/tony/env/teton/bin"
+ExecStart=/home/tony/env/teton/bin/gunicorn --workers 3 --bind unix:peak.sock -m 007 wsgi:app
+
+[Install]
+WantedBy=multi-user.target
+
+
+  sudo systemctl start peak
+  sudo systemctl enable peak
+
+  sudo systemctl status peak
+
+● peak.service - Gunicorn instance to serve peak Flask app
+     Loaded: loaded (/etc/systemd/system/peak.service; enabled; preset: enabled)
+     Active: active (running) since Wed 2024-06-05 18:03:20 UTC; 8s ago
+   Main PID: 10527 (gunicorn)
+      Tasks: 4 (limit: 4614)
+     Memory: 54.3M (peak: 54.5M)
+        CPU: 457ms
+     CGroup: /system.slice/peak.service
+             ├─10527 /home/tony/env/teton/bin/python3 /home/tony/env/teton/bin/gunicorn --workers 3 --bind unix:/home/tony/hike/peak.sock -m 007 >
+             ├─10531 /home/tony/env/teton/bin/python3 /home/tony/env/teton/bin/gunicorn --workers 3 --bind unix:/home/tony/hike/peak.sock -m 007 >
+             ├─10532 /home/tony/env/teton/bin/python3 /home/tony/env/teton/bin/gunicorn --workers 3 --bind unix:/home/tony/hike/peak.sock -m 007 >
+             └─10533 /home/tony/env/teton/bin/python3 /home/tony/env/teton/bin/gunicorn --workers 3 --bind unix:/home/tony/hike/peak.sock -m 007 >
+
+Jun 05 18:03:20 dell systemd[1]: Started peak.service - Gunicorn instance to serve peak Flask app.
+Jun 05 18:03:20 dell gunicorn[10527]: [2024-06-05 18:03:20 +0000] [10527] [INFO] Starting gunicorn 22.0.0
+Jun 05 18:03:20 dell gunicorn[10527]: [2024-06-05 18:03:20 +0000] [10527] [INFO] Listening at: unix:/home/tony/hike/peak.sock (10527)
+Jun 05 18:03:20 dell gunicorn[10527]: [2024-06-05 18:03:20 +0000] [10527] [INFO] Using worker: sync
+Jun 05 18:03:20 dell gunicorn[10531]: [2024-06-05 18:03:20 +0000] [10531] [INFO] Booting worker with pid: 10531
+Jun 05 18:03:21 dell gunicorn[10532]: [2024-06-05 18:03:21 +0000] [10532] [INFO] Booting worker with pid: 10532
+Jun 05 18:03:21 dell gunicorn[10533]: [2024-06-05 18:03:21 +0000] [10533] [INFO] Booting worker with pid: 10533
+
+
+-----NGINX-----
+
+  sudo apt install nginx
+
+  sudo nano /etc/nginx/sites-available/peak_conf
+
+server {
+    listen 80;
+    server_name ravenxpool.com www.ravenxpool.com;
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/home/tony/hike/peak.sock;
+    }
+}
+
+
+symbolic link for Nginx
+
+  sudo ln -s /etc/nginx/sites-available/peak.conf /etc/nginx/sites-enabled/
+
+  sudo nginx -t
+
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+
+  sudo systemctl restart nginx
+
+
+-----UFW-----
+
+  sudo ufw status
+  sudo ufw delete allow 5000
+  sudo ufw allow "nginx full"
+  sudo ufw status
+
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW       Anywhere
+Nginx Full                 ALLOW       Anywhere
+22/tcp (v6)                ALLOW       Anywhere (v6)
+Nginx Full (v6)            ALLOW       Anywhere (v6)
+
+
+-----PERMISSIONS-----
+
+ sudo tail /var/log/nginx/error.log
+
+2024/06/04 20:29:37 [crit] 8065#8065: *1 connect() to unix:/home/tony/hike/peak.sock failed (13: Permission denied) while connecting to upstream, client: 46.22.110.215, server: ravenxpool.com, request: "GET / HTTP/1.1", upstream: "http://unix:/home/tony/hike/peak.sock:/", host: "www.ravenxpool.com"
+
+  sudo chmod 775 /home/tony/
+  sudo chmod 775 /home/tony/hike/peak.sock
+
+
+  ls -ld /home/tony
+drwxrwxr-x 6 tony tony 4096 Jun  5 08:29 /home/tony
+
+
+  ls -ld /home/tony/hike
+drwxrwxr-x 5 tony tony 4096 Jun  5 18:03 /home/tony/hike
+
+
+  ls -l /home/tony/hike/peak.sock
+srwxrwxr-x 1 tony www-data 0 Jun  5 18:03 /home/tony/hike/peak.sock
+
+
+sudo grep user /etc/nginx/nginx.conf
+user www-data;
+
+
+
+
+
+COMMANDS
+
+sudo systemctl daemon-reload
+sudo systemctl restart peak
+sudo systemctl status peak
+sudo systemctl restart nginx
+sudo journalctl -u peak
+sudo tail /var/log/nginx/error.log
+
+
+
