@@ -1,5 +1,5 @@
 
-sudo nano peak.service
+sudo nano /etc/systemd/system/peak.service
 
 
 [Unit]
@@ -102,19 +102,6 @@ srwxrwxr-x 1 tony tony 0 Jun 1 15:00 /home/tony/hike/peak.sock
 Change the ownership and permissions:
 If the permissions are not correct, you can change the ownership to the user that Nginx runs as (usually www-data on Debian-based systems):
 
-bash
-Copy code
-sudo chown www-data:www-data /home/tony/hike/peak.sock
-sudo chmod 770 /home/tony/hike/peak.sock
-
-	tony@dell-OptiPlex-3020:~/hike$ sudo chown www-data:www-data /home/tony/hike/peak.sock
-					sudo chmod 770 /home/tony/hike/peak.sock
-
-	tony@dell-OptiPlex-3020:~/hike$ ls -l /home/tony/hike/peak.sock
-	srwxrwx--- 1 www-data www-data 0 Jun  1 15:07 /home/tony/hike/peak.sock
-
-
-Alternatively, if you need to allow multiple users or groups access, adjust the permissions accordingly.
 
 Verify Nginx user:
 Ensure that Nginx is running under the correct user. You can check this in the Nginx configuration file (usually found at /etc/nginx/nginx.conf or /etc/nginx/conf.d/):
