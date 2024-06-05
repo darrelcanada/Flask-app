@@ -1,5 +1,5 @@
 
-sudo nano /etc/systemd/system/peak.service
+sudo nano /etc/nginx/sites-available/peak_config
 
 
 [Unit]
