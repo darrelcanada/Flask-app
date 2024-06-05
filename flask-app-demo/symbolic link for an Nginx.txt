@@ -1,4 +1,0 @@
-
- sudo ln -s /etc/nginx/sites-available/peak.conf  /etc/nginx/sites-enabled/
-
-
