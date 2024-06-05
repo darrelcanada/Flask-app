@@ -166,5 +166,56 @@ tony@dell-OptiPlex-3020:~/hike$ sudo tail /var/log/nginx/error.log
 	tony@dell-OptiPlex-3020:~/hike$ ls -l /home/tony/hike/peak.sock
 	srwxrwxr-x 1 www-data www-data 0 Jun  1 15:07 /home/tony/hike/peak.sock
 
+    Philipp Acsany
+    :realpython:  1 day ago
+    Ah, gotcha! Yes, it seems that the permissions are set correct. Also, the peak.service file looks mostly correct to me. However, the current configuration uses unix:peak.sock. It could be worth a try to change it to the absolute path /home/tony/hike/peak.sock.
 
+Before
 
+tony@dell:~/hike$ sudo systemctl status peak
+● peak.service - Gunicorn instance to serve peak Flask app
+     Loaded: loaded (/etc/systemd/system/peak.service; enabled; preset: enabled)
+     Active: active (running) since Wed 2024-06-05 06:42:17 UTC; 52s ago
+   Main PID: 8845 (gunicorn)
+      Tasks: 4 (limit: 4614)
+     Memory: 54.2M (peak: 54.7M)
+        CPU: 512ms
+     CGroup: /system.slice/peak.service
+             ├─8845 /home/tony/env/teton/bin/python3 /home/tony/env/teton/bin/gunicorn --workers 3 --bind unix:peak.sock -m 007 wsgi:app
+             ├─8846 /home/tony/env/teton/bin/python3 /home/tony/env/teton/bin/gunicorn --workers 3 --bind unix:peak.sock -m 007 wsgi:app
+             ├─8847 /home/tony/env/teton/bin/python3 /home/tony/env/teton/bin/gunicorn --workers 3 --bind unix:peak.sock -m 007 wsgi:app
+             └─8848 /home/tony/env/teton/bin/python3 /home/tony/env/teton/bin/gunicorn --workers 3 --bind unix:peak.sock -m 007 wsgi:app
+
+Jun 05 06:42:17 dell systemd[1]: Started peak.service - Gunicorn instance to serve peak Flask app.
+Jun 05 06:42:17 dell gunicorn[8845]: [2024-06-05 06:42:17 +0000] [8845] [INFO] Starting gunicorn 22.0.0
+Jun 05 06:42:17 dell gunicorn[8845]: [2024-06-05 06:42:17 +0000] [8845] [INFO] Listening at: unix:peak.sock (8845)
+Jun 05 06:42:17 dell gunicorn[8845]: [2024-06-05 06:42:17 +0000] [8845] [INFO] Using worker: sync
+Jun 05 06:42:17 dell gunicorn[8846]: [2024-06-05 06:42:17 +0000] [8846] [INFO] Booting worker with pid: 8846
+Jun 05 06:42:17 dell gunicorn[8847]: [2024-06-05 06:42:17 +0000] [8847] [INFO] Booting worker with pid: 8847
+
+After
+
+tony@dell:~/hike$ sudo systemctl daemon-reload
+tony@dell:~/hike$ sudo systemctl restart nginx
+tony@dell:~/hike$ sudo systemctl start peak
+tony@dell:~/hike$ sudo systemctl status peak
+× peak.service - Gunicorn instance to serve peak Flask app
+     Loaded: loaded (/etc/systemd/system/peak.service; enabled; preset: enabled)
+     Active: failed (Result: exit-code) since Wed 2024-06-05 06:48:55 UTC; 2s ago
+   Duration: 5.142s
+    Process: 8986 ExecStart=/home/tony/env/teton/bin/gunicorn --workers 3 --bind /home/tony/hike/peak.sock -m 007 wsgi:app (code=exited, status=1>
+   Main PID: 8986 (code=exited, status=1/FAILURE)
+        CPU: 139ms
+
+Jun 05 06:48:49 dell systemd[1]: Started peak.service - Gunicorn instance to serve peak Flask app.
+Jun 05 06:48:50 dell gunicorn[8986]: [2024-06-05 06:48:50 +0000] [8986] [INFO] Starting gunicorn 22.0.0
+Jun 05 06:48:50 dell gunicorn[8986]: [2024-06-05 06:48:50 +0000] [8986] [ERROR] Retrying in 1 second.
+Jun 05 06:48:51 dell gunicorn[8986]: [2024-06-05 06:48:51 +0000] [8986] [ERROR] Retrying in 1 second.
+Jun 05 06:48:52 dell gunicorn[8986]: [2024-06-05 06:48:52 +0000] [8986] [ERROR] Retrying in 1 second.
+Jun 05 06:48:53 dell gunicorn[8986]: [2024-06-05 06:48:53 +0000] [8986] [ERROR] Retrying in 1 second.
+Jun 05 06:48:54 dell gunicorn[8986]: [2024-06-05 06:48:54 +0000] [8986] [ERROR] Retrying in 1 second.
+Jun 05 06:48:55 dell gunicorn[8986]: [2024-06-05 06:48:55 +0000] [8986] [ERROR] Can't connect to ('/home/tony/hike/peak.sock', 8000)
+Jun 05 06:48:55 dell systemd[1]: peak.service: Main process exited, code=exited, status=1/FAILURE
+Jun 05 06:48:55 dell systemd[1]: peak.service: Failed with result 'exit-code'.
+
+Jun 05 06:42:17 dell gunicorn[8848]: [2024-06-05 06:42:17 +0000] [8848] [INFO] Booting worker with pid: 8848
