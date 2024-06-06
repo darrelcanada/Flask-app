@@ -158,5 +158,29 @@ sudo systemctl restart nginx
 sudo journalctl -u peak
 sudo tail /var/log/nginx/error.log
 
+-----Router Setup-----
+
+Type:	User-defined Application
+
+Application:	Enable Port Mapping:	
+Mapping Name:	webserver
+WAN Name:	5_TR069_VOIP_INTERNET_R_GE_VID_
+Internal Host:	192.168.1.11
+
+External Source IP Address:	
+--
+
+Protocol:	
+TCP
+Internal port number:	
+80--80
+
+External port number:	
+8080--8080
+
+External source port number:	
+0--0
+
+
 
 
